@@ -8,8 +8,8 @@ export const state: AppState = {
     isMirrored: false,
     isMirroredH: false,
     isScreenRotated: false,
-    selectedLanguage: 'en-US', // Target language for SpeechRecognition
-    languageSetting: 'auto', // User's dropdown preference
+    selectedLanguage: 'ru-RU', // Target language for SpeechRecognition
+    languageSetting: 'ru-RU', // User's dropdown preference ('auto' to detect from the script)
     detectedLanguage: null,
     config: {
         fontSize: 40,
@@ -21,7 +21,7 @@ export const state: AppState = {
         textDirection: 'ltr',
         showStopIcon: false,
         preserveFormatting: true,
-        voiceCommandsEnabled: false,
+        voiceCommandsEnabled: true,
         paragraphSpacing: 0.5,
         smoothAnimations: false,
         highlightActiveWord: true,

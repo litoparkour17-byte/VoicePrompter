@@ -41,7 +41,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeout 
 export async function fetchGoogleDocText(docUrl: string): Promise<string> {
     const docId = extractDocId(docUrl);
     if (!docId) {
-        throw new Error('Invalid Google Doc URL. Please check the link and try again.');
+        throw new Error('Это не похоже на ссылку Google Документа. Проверьте её и попробуйте снова.');
     }
 
     const exportUrl = `https://docs.google.com/document/d/${docId}/export?format=txt&cb=${Date.now()}`;
@@ -67,15 +67,15 @@ export async function fetchGoogleDocText(docUrl: string): Promise<string> {
             
             const text = await response.text();
             if (!text || text.trim().length === 0) {
-                throw new Error('The retrieved document is empty.');
+                throw new Error('Документ пуст.');
             }
 
             // Check if we received HTML (login page redirect)
             if (text.trim().startsWith('<!DOCTYPE html>') || text.includes('<html')) {
                 if (text.includes('google-signin') || text.includes('accounts.google.com') || text.includes('ServiceLogin')) {
-                    throw new Error('Document access denied. Please verify your Google Doc is shared with "Anyone with the link" as a Viewer.');
+                    throw new Error('Нет доступа к документу. Откройте доступ «Все, у кого есть ссылка» с правом «Читатель».');
                 }
-                throw new Error('Failed to retrieve plain text. The page was redirected.');
+                throw new Error('Не удалось получить текст документа: вместо него пришла другая страница.');
             }
 
             return text;
@@ -87,10 +87,10 @@ export async function fetchGoogleDocText(docUrl: string): Promise<string> {
     }
 
     // If all proxies failed, report the error details
-    const isPermissionError = lastError?.message && lastError.message.includes('access denied');
+    const isPermissionError = lastError?.message && lastError.message.includes('Нет доступа');
     if (isPermissionError) {
         throw lastError;
     }
     
-    throw new Error('Failed to connect to Google Docs. Please verify your document is shared with "Anyone with the link" as a Viewer, or try again later.');
+    throw new Error('Не удалось связаться с Google Docs. Проверьте, что доступ открыт как «Все, у кого есть ссылка» с правом «Читатель», или попробуйте позже.');
 }

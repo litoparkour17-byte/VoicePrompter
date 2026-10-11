@@ -9,7 +9,11 @@
     "build:blog": "node scripts/build-blog.js",
     "build:use-cases": "node scripts/build-use-cases.js",
     "build": "npm run build:changelog && npm run build:blog && npm run build:use-cases && tsc && vite build",
-    "preview": "vite preview"
+    "build:app": "tsc && APP_ONLY=1 vite build",
+    "dev:https": "node scripts/make-cert.js && HTTPS=1 vite",
+    "preview": "vite preview",
+    "test": "node --test \"tests/*.test.ts\"",
+    "simulate": "node tests/simulate.ts"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",

@@ -23,9 +23,36 @@ if (fs.existsSync(macDir)) {
     });
 }
 
+// Where the site is served from. GitHub Pages serves a project at /<repository>/.
+const base = process.env.BASE_PATH || '/';
+
+// APP_ONLY=1 builds the prompter alone, without the original project's
+// website (landing pages, blog, videos, and its CNAME).
+const appOnly = process.env.APP_ONLY === '1';
+const appPublicDir = path.resolve(__dirname, '.app-public');
+if (appOnly) {
+    fs.mkdirSync(appPublicDir, { recursive: true });
+    for (const file of ['favicon.ico', 'apple-touch-icon.png', 'logo-icon-no-bg.svg', 'pwa-192x192.png', 'pwa-512x512.png']) {
+        fs.copyFileSync(path.resolve(__dirname, 'public', file), path.join(appPublicDir, file));
+    }
+    // The prompter lives in /app/; the site root leads there
+    fs.writeFileSync(path.join(appPublicDir, 'index.html'),
+        '<!DOCTYPE html><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=app/"><a href="app/">Суфлёр</a>\n');
+}
+
+// HTTPS=1 serves over HTTPS with the certificate made by scripts/make-cert.js,
+// so a phone on the same network gets microphone access (`npm run dev:https`).
+const certDir = path.resolve(__dirname, '.cert');
+const https = process.env.HTTPS === '1'
+    ? { key: fs.readFileSync(path.join(certDir, 'key.pem')), cert: fs.readFileSync(path.join(certDir, 'cert.pem')) }
+    : undefined;
+
 export default defineConfig({
     appType: 'mpa',
-    // base: '/Teleprompter/', // Removed for custom domain
+    base,
+    publicDir: appOnly ? appPublicDir : 'public',
+    server: { https, host: !!https },
+    preview: { https, host: !!https },
     plugins: [
         VitePWA({
             registerType: 'autoUpdate',
@@ -34,14 +61,15 @@ export default defineConfig({
             },
             includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
             manifest: {
-                name: 'VoicePrompter',
-                short_name: 'VoicePrompter',
-                description: 'A voice-activated teleprompter app',
+                name: 'Суфлёр',
+                short_name: 'Суфлёр',
+                description: 'Телесуфлёр с прокруткой по голосу',
+                lang: 'ru',
                 theme_color: '#000000',
                 background_color: '#000000',
                 display: 'standalone',
-                start_url: '/app/',
-                scope: '/app/',
+                start_url: `${base}app/`,
+                scope: `${base}app/`,
                 icons: [
                     {
                         src: 'pwa-192x192.png',
@@ -58,8 +86,9 @@ export default defineConfig({
         })
     ],
     build: {
+        outDir: appOnly ? 'dist-app' : 'dist',
         rollupOptions: {
-            input: {
+            input: appOnly ? { app: 'app/index.html' } : {
                 hub: 'index.html',
                 support: 'support/index.html',
                 app: 'app/index.html',

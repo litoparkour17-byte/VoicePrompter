@@ -3,9 +3,11 @@ import { registerSW } from 'virtual:pwa-register';
 import { initElements, els } from './elements';
 import { state } from './state';
 import { renderScript, updateHighlight, scrollToCurrent, applySettings, renderHistoryList, restartScript } from './render';
-import { initSpeech, startListening, stopListening } from './speech';
+import { initSpeech, startListening, stopListening, handleTranscript } from './speech';
 import { autoScrollManager } from './autoscroll';
 import { saveToHistory, getHistory, clearAllHistory } from './storage';
+import { loadSettings, saveSettings } from './settings';
+import { keepScreenAwake } from './wakelock';
 import { ScriptWord, ScrollingMode } from './types';
 import { enterVideoMode, exitVideoMode, toggleVideoLayout, startRecording, stopRecording, flipCamera, getMediaConstraints } from './video';
 import { detectAll } from 'tinyld/light';
@@ -18,44 +20,44 @@ const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platfor
 interface LangItem { id: string; name: string }
 
 const AUTO_LANGS: LangItem[] = [
-    { id: 'en-US', name: 'English' },
-    { id: 'es-ES', name: 'Spanish' },
-    { id: 'fr-FR', name: 'French' },
-    { id: 'de-DE', name: 'German' },
-    { id: 'it-IT', name: 'Italian' },
-    { id: 'pt-PT', name: 'Portuguese' },
-    { id: 'ru-RU', name: 'Russian' },
-    { id: 'ja-JP', name: 'Japanese' },
-    { id: 'zh-CN', name: 'Chinese' },
-    { id: 'ko-KR', name: 'Korean' },
-    { id: 'ar-SA', name: 'Arabic' },
-    { id: 'nl-NL', name: 'Dutch' },
-    { id: 'pl-PL', name: 'Polish' },
-    { id: 'uk-UA', name: 'Ukrainian' },
-    { id: 'hi-IN', name: 'Hindi' },
-    { id: 'tr-TR', name: 'Turkish' },
-    { id: 'sv-SE', name: 'Swedish' },
-    { id: 'da-DK', name: 'Danish' },
-    { id: 'fi-FI', name: 'Finnish' },
-    { id: 'no-NO', name: 'Norwegian' }
-].sort((a, b) => a.name.localeCompare(b.name));
+    { id: 'en-US', name: 'Английский' },
+    { id: 'es-ES', name: 'Испанский' },
+    { id: 'fr-FR', name: 'Французский' },
+    { id: 'de-DE', name: 'Немецкий' },
+    { id: 'it-IT', name: 'Итальянский' },
+    { id: 'pt-PT', name: 'Португальский' },
+    { id: 'ru-RU', name: 'Русский' },
+    { id: 'ja-JP', name: 'Японский' },
+    { id: 'zh-CN', name: 'Китайский' },
+    { id: 'ko-KR', name: 'Корейский' },
+    { id: 'ar-SA', name: 'Арабский' },
+    { id: 'nl-NL', name: 'Нидерландский' },
+    { id: 'pl-PL', name: 'Польский' },
+    { id: 'uk-UA', name: 'Украинский' },
+    { id: 'hi-IN', name: 'Хинди' },
+    { id: 'tr-TR', name: 'Турецкий' },
+    { id: 'sv-SE', name: 'Шведский' },
+    { id: 'da-DK', name: 'Датский' },
+    { id: 'fi-FI', name: 'Финский' },
+    { id: 'no-NO', name: 'Норвежский' }
+].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
 const MANUAL_LANGS: LangItem[] = [
-    { id: 'id-ID', name: 'Indonesian' },
-    { id: 'ms-MY', name: 'Malay' },
-    { id: 'ca-ES', name: 'Catalan' },
-    { id: 'cs-CZ', name: 'Czech' },
-    { id: 'el-GR', name: 'Greek' },
-    { id: 'he-IL', name: 'Hebrew' },
-    { id: 'hu-HU', name: 'Hungarian' },
-    { id: 'ro-RO', name: 'Romanian' },
-    { id: 'sk-SK', name: 'Slovak' },
-    { id: 'th-TH', name: 'Thai' },
-    { id: 'vi-VN', name: 'Vietnamese' },
-    { id: 'bg-BG', name: 'Bulgarian' },
-    { id: 'hr-HR', name: 'Croatian' },
-    { id: 'sr-RS', name: 'Serbian' },
-].sort((a, b) => a.name.localeCompare(b.name));
+    { id: 'id-ID', name: 'Индонезийский' },
+    { id: 'ms-MY', name: 'Малайский' },
+    { id: 'ca-ES', name: 'Каталанский' },
+    { id: 'cs-CZ', name: 'Чешский' },
+    { id: 'el-GR', name: 'Греческий' },
+    { id: 'he-IL', name: 'Иврит' },
+    { id: 'hu-HU', name: 'Венгерский' },
+    { id: 'ro-RO', name: 'Румынский' },
+    { id: 'sk-SK', name: 'Словацкий' },
+    { id: 'th-TH', name: 'Тайский' },
+    { id: 'vi-VN', name: 'Вьетнамский' },
+    { id: 'bg-BG', name: 'Болгарский' },
+    { id: 'hr-HR', name: 'Хорватский' },
+    { id: 'sr-RS', name: 'Сербский' },
+].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
 const LANG_MAP: Record<string, string> = {
     'en': 'en-US', 'es': 'es-ES', 'fr': 'fr-FR', 'de': 'de-DE',
@@ -70,7 +72,7 @@ function renderLanguageDropdowns() {
         container.innerHTML = `
             <button class="w-full flex items-center justify-between text-left bg-neutral-800 border border-neutral-700 rounded px-3 h-[38px] text-sm text-neutral-300 focus:ring-2 focus:ring-[#FFBB00] focus:border-transparent outline-none transition-colors hover:bg-neutral-700 min-w-[200px]" data-dropdown-toggle>
                 <div class="flex flex-col flex-1 truncate">
-                    <span class="font-medium dropdown-title">Auto-detect</span>
+                    <span class="font-medium dropdown-title">Определять автоматически</span>
                     <span class="text-[10px] text-neutral-400 dropdown-subtitle truncate h-3 mt-0.5" style="display: none;"></span>
                 </div>
                 <svg class="w-4 h-4 ml-2 flex-shrink-0 text-neutral-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -81,24 +83,24 @@ function renderLanguageDropdowns() {
                 <div class="overflow-y-auto no-scrollbar py-2">
                     <button class="w-full text-left px-3 py-2 hover:bg-neutral-800 transition-colors flex flex-col lang-option" data-value="auto">
                         <div class="flex items-center justify-between w-full">
-                            <span class="font-medium text-white">Automatic</span>
+                            <span class="font-medium text-white">Автоматически</span>
                             <span class="text-[10px] text-neutral-500 auto-detected-label ml-2 truncate"></span>
                         </div>
                     </button>
                     
                     <div class="px-3 py-1 mt-1 flex items-center justify-between">
-                        <span class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">With Auto-Detection</span>
+                        <span class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">Определяются автоматически</span>
                     </div>
                     
                     ${AUTO_LANGS.map(lang => `
                         <button class="w-full text-left px-3 py-1.5 hover:bg-neutral-800 transition-colors flex items-center justify-between lang-option" data-value="${lang.id}">
                             <span class="text-sm text-neutral-300">${lang.name}</span>
-                            <span class="text-[9px] font-bold bg-[#FFBB00]/10 text-[#FFBB00] px-1.5 py-0.5 rounded-full tracking-wider">AUTO</span>
+                            <span class="text-[9px] font-bold bg-[#FFBB00]/10 text-[#FFBB00] px-1.5 py-0.5 rounded-full tracking-wider">АВТО</span>
                         </button>
                     `).join('')}
 
                     <div class="px-3 py-1 mt-2 flex items-center justify-between border-t border-neutral-800 pt-2">
-                        <span class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">Manual Selection</span>
+                        <span class="text-[10px] uppercase font-bold text-neutral-500 tracking-wider">Выбираются вручную</span>
                     </div>
 
                     ${MANUAL_LANGS.map(lang => `
@@ -187,10 +189,10 @@ function updateAutoDetectText(detectedVal: string | null) {
 
         if (state.languageSetting === 'auto') {
             if (detectedName) {
-                toggleTitle.textContent = `Automatic (${detectedName})`;
-                if (autoOptLabel) autoOptLabel.textContent = `${detectedName} detected`;
+                toggleTitle.textContent = `Авто (${detectedName})`;
+                if (autoOptLabel) autoOptLabel.textContent = `определён: ${detectedName}`;
             } else {
-                toggleTitle.textContent = 'Auto-detect';
+                toggleTitle.textContent = 'Определять автоматически';
                 if (autoOptLabel) autoOptLabel.textContent = '';
             }
             toggleTitle.classList.add('text-white');
@@ -201,7 +203,7 @@ function updateAutoDetectText(detectedVal: string | null) {
             toggleTitle.classList.remove('text-white');
             toggleTitle.classList.add('text-neutral-300');
 
-            if (autoOptLabel) autoOptLabel.textContent = detectedName ? `${detectedName} detected` : '';
+            if (autoOptLabel) autoOptLabel.textContent = detectedName ? `определён: ${detectedName}` : '';
         }
     });
 }
@@ -211,8 +213,14 @@ registerSW({ immediate: true });
 
 // --- Initialization ---
 initElements();
+loadSettings();
 initSpeech();
 renderLanguageDropdowns();
+
+// Lets a test feed recognized text without a microphone: __hear('привет меня зовут')
+if (import.meta.env.DEV) {
+    (window as any).__hear = handleTranscript;
+}
 
 // --- Toast ---
 let langWarningTimer: ReturnType<typeof setTimeout> | null = null;
@@ -318,6 +326,7 @@ function loadScript(text: string, googleDocUrl: string | null = null): void {
     renderScript();
     applySettings(); // Ensure settings are applied after render
     lockBodyScroll(); // Keep tap targets aligned in the full-screen prompter (see below)
+    keepScreenAwake(true);
 }
 
 function resetApp(): void {
@@ -325,6 +334,7 @@ function resetApp(): void {
     autoScrollManager.stop();
     isAutoScrollStarting = false;
     unlockBodyScroll();
+    keepScreenAwake(false);
     els.prompterContainer.classList.add('hidden');
     els.setupScreen.classList.remove('hidden');
     renderHistoryList(getHistory(), loadScript);
@@ -386,7 +396,7 @@ if (window.visualViewport) {
 window.addEventListener('orientationchange', () => setTimeout(keepScrollZeroWhileLocked, 60));
 
 function clearHistory(): void {
-    if (confirm('Clear all recent scripts?')) {
+    if (confirm('Удалить все недавние тексты?')) {
         clearAllHistory();
         renderHistoryList(getHistory(), loadScript);
     }
@@ -415,7 +425,7 @@ els.copyScriptBtn.addEventListener('click', async () => {
     try {
         await navigator.clipboard.writeText(text);
         const originalText = els.copyScriptBtn.textContent;
-        els.copyScriptBtn.textContent = 'Copied!';
+        els.copyScriptBtn.textContent = 'Скопировано!';
         setTimeout(() => els.copyScriptBtn.textContent = originalText, 1500);
     } catch (err) {
     }
@@ -464,14 +474,14 @@ els.pasteGoogleDocUrlBtn.addEventListener('click', async () => {
 els.confirmGoogleDocImportBtn.addEventListener('click', async () => {
     const url = els.googleDocUrlInput.value.trim();
     if (!url) {
-        alert('Please enter a Google Doc URL.');
+        alert('Вставьте ссылку на Google Документ.');
         return;
     }
 
     const btn = els.confirmGoogleDocImportBtn as HTMLButtonElement;
     const originalText = btn.textContent;
     btn.disabled = true;
-    btn.textContent = 'Importing...';
+    btn.textContent = 'Загружаю…';
 
     try {
         const text = await fetchGoogleDocText(url);
@@ -484,7 +494,7 @@ els.confirmGoogleDocImportBtn.addEventListener('click', async () => {
         loadScript(text, url);
     } catch (err: any) {
         (window as any).umami?.track('import-google-doc-error', { error: err.message });
-        alert(err.message || 'Failed to import document.');
+        alert(err.message || 'Не удалось загрузить документ.');
     } finally {
         btn.disabled = false;
         btn.textContent = originalText;
@@ -500,7 +510,7 @@ els.refreshGoogleDocBtn.addEventListener('click', async () => {
     const btn = els.refreshGoogleDocBtn as HTMLButtonElement;
     const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Syncing...';
+    btn.textContent = 'Обновляю…';
 
     try {
         const text = await fetchGoogleDocText(url);
@@ -520,14 +530,14 @@ els.refreshGoogleDocBtn.addEventListener('click', async () => {
             scrollToCurrent();
         }
 
-        btn.textContent = 'Synced!';
+        btn.textContent = 'Обновлено!';
         setTimeout(() => {
             btn.disabled = false;
             btn.innerHTML = originalText;
         }, 1500);
     } catch (err: any) {
         (window as any).umami?.track('refresh-google-doc-error', { error: err.message });
-        alert(err.message || 'Failed to refresh document.');
+        alert(err.message || 'Не удалось обновить документ.');
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
@@ -546,12 +556,12 @@ els.copyGoogleDocUrlBtn.addEventListener('click', async () => {
         const originalHTML = els.copyGoogleDocUrlBtn.innerHTML;
         els.copyGoogleDocUrlBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>`;
         
-        alert('Google Doc link copied to clipboard!');
+        alert('Ссылка на документ скопирована.');
         
         els.copyGoogleDocUrlBtn.innerHTML = originalHTML;
     } catch (err) {
         console.error('Failed to copy Google Doc link:', err);
-        alert('Failed to copy link. Please manually copy it from the browser address bar.');
+        alert('Не удалось скопировать ссылку. Скопируйте её вручную из адресной строки.');
     }
 });
 
@@ -587,7 +597,7 @@ els.micButton.addEventListener('click', async () => {
             isAutoScrollStarting = false;
             if (!started) {
                 if (state.config.scrollingMode === 'sound') {
-                    alert('Sound Scrolling needs microphone access. Please allow microphone permission and try again.');
+                    alert('Прокрутке по звуку нужен микрофон. Разрешите доступ к микрофону и попробуйте снова.');
                 }
                 return;
             }
@@ -885,6 +895,7 @@ function handleLanguageChange(lang: string) {
     if (state.recognition) {
         state.recognition.lang = state.selectedLanguage;
     }
+    saveSettings();
 }
 
 // Preserve Formatting Toggle
@@ -968,6 +979,11 @@ els.dismissLangWarningBtn.addEventListener('click', () => {
     if (langWarningTimer) clearTimeout(langWarningTimer);
 });
 
+// Dismiss Speech Error Toast
+els.dismissSpeechErrorBtn.addEventListener('click', () => {
+    els.speechErrorToast.classList.add('hidden');
+});
+
 // Dismiss Android Video Warning
 els.dismissAndroidVideoWarningBtn.addEventListener('click', () => {
     els.androidVideoWarning.classList.add('hidden');
@@ -1016,12 +1032,19 @@ function initializeUI(): void {
     if (localStorage.getItem('beta-hmirror') === '1') {
         els.hMirrorRow.classList.remove('hidden');
         els.hMirrorRow.classList.add('flex');
-        els.mirrorModeLabel.textContent = 'Mirror Mode (vertical)';
+        els.mirrorModeLabel.textContent = 'Зеркало по вертикали';
     }
+
+    // ?debug=1 shows what the recognizer heard at the top of the prompter on
+    // this device, ?debug=0 hides it again.
+    const debug = new URLSearchParams(window.location.search).get('debug');
+    if (debug === '1') localStorage.setItem('debug-heard', '1');
+    if (debug === '0') localStorage.removeItem('debug-heard');
 
     // Set UI values from state
     els.fontSizeVal.textContent = `${state.config.fontSize}px`;
     els.fontSizeInput.value = state.config.fontSize.toString();
+    els.scriptContent.style.fontSize = `${state.config.fontSize}px`;
 
     els.lineHeightVal.textContent = `${state.config.lineHeight}x`;
     els.lineHeightInput.value = state.config.lineHeight.toString();
@@ -1032,6 +1055,11 @@ function initializeUI(): void {
 
     els.marginVal.textContent = `${state.config.margin}%`;
     els.marginInput.value = state.config.margin.toString();
+    // Zero keeps the padding from the stylesheet, as before the slider is touched
+    if (state.config.margin > 0) {
+        els.scriptContent.style.paddingLeft = `${state.config.margin}%`;
+        els.scriptContent.style.paddingRight = `${state.config.margin}%`;
+    }
 
     els.dockOpacityVal.textContent = `${state.config.dockOpacity}%`;
     els.dockOpacityInput.value = state.config.dockOpacity.toString();
@@ -1048,11 +1076,16 @@ function initializeUI(): void {
 
     els.smoothAnimationsToggle.checked = state.config.smoothAnimations;
     els.highlightActiveWordToggle.checked = state.config.highlightActiveWord;
+    els.voiceCommandToggle.checked = state.config.voiceCommandsEnabled;
+    els.stopSignToggle.checked = state.config.showStopIcon;
+    els.preserveFormattingToggle.checked = state.config.preserveFormatting;
+    els.textColorInput.value = state.config.textColor;
+    els.bgColorInput.value = state.config.bgColor;
 
     // Seed demo script for first-time users
     const history = getHistory();
     if (history.length === 0) {
-        const demoText = `Welcome to VoicePrompter - a completely free teleprompter that works right in the browser.\nThis text is scrolling automatically as you speak following your voice.\nSee the highlighted word? That's where you are in the script right now.\nIf you want to jump to a different part, just tap any word and it syncs instantly.\nYou can also use voice commands like go back, go next, go start, or go finish.\nThe app can also record video with the script overlaid, so you don't need any extra software.\nIn the settings you can adjust font size, margins, line and paragraph spacing, pick a color theme and more - I encourage you to explore the settings on your own and find the best ones for you.\nThe app supports 34 languages and detects them automatically.\nOne more thing - text in square brackets gets skipped automatically [like this]. Useful for notes or reminders to yourself.\nEverything runs on your device. Nothing is sent to any server. You can even save it to your home screen and use it completely offline.\n\nNow go make something great ;)`;
+        const demoText = `Привет! Это суфлёр, который идёт за вашим голосом.\nНажмите на микрофон и читайте этот текст вслух: подсветка покажет слово, которое вы сейчас произносите.\nЗамолчите — текст подождёт. Добавите пару слов от себя — он останется на месте.\nЧисла тоже понятны: 5 дней, 25 человек, 2026 год, 50% успеха.\nПропустили строку — суфлёр догонит вас через два-три слова. Перечитали фразу заново — вернётся к ней.\nЧтобы перейти в другое место, коснитесь любого слова.\nЕсть голосовые команды. Они работают, когда произнесены отдельно от текста: одна возвращает к началу абзаца, другая переходит к следующему.\nТекст в квадратных скобках суфлёр пропускает [например, эту заметку для себя].\nРазмер шрифта, поля, цвета и положение строки меняются в настройках, и они сохраняются.\n\nТеперь вставьте свой текст — и удачной записи!`;
 
         // Save to localStorage with 'demo' tag
         const demoItem = {
@@ -1060,7 +1093,7 @@ function initializeUI(): void {
             text: demoText,
             preview: demoText.substring(0, 40) + '...',
             date: new Date().toLocaleDateString(),
-            tag: 'demo'
+            tag: 'демо'
         };
         localStorage.setItem('teleprompter_history', JSON.stringify([demoItem]));
 
@@ -1143,7 +1176,7 @@ async function handleDeviceChange(): Promise<void> {
             await els.videoPreview.play();
         } catch (err) {
             console.error('Failed to switch media device sources:', err);
-            alert('Failed to switch to the selected device.');
+            alert('Не удалось переключиться на выбранное устройство.');
         }
     }
 
@@ -1206,7 +1239,7 @@ if (!isIOS) {
 function updateScrollingUI() {
     els.scrollingModeSelect.value = state.config.scrollingMode;
     els.scrollSpeedInput.value = state.config.scrollSpeed.toString();
-    els.scrollSpeedVal.textContent = `${state.config.scrollSpeed.toFixed(1)} w/s`;
+    els.scrollSpeedVal.textContent = `${state.config.scrollSpeed.toFixed(1)} сл/с`;
     els.soundSensitivityInput.value = state.config.soundSensitivity.toString();
     els.soundSensitivityVal.textContent = `${Math.round(state.config.soundSensitivity * 100)}%`;
 
@@ -1214,9 +1247,9 @@ function updateScrollingUI() {
     els.soundSensitivityContainer.classList.toggle('hidden', state.config.scrollingMode !== 'sound');
 
     const descriptions: Record<ScrollingMode, string> = {
-        voice: 'Follows the words you say and pauses when you pause.',
-        sound: 'Scrolls while microphone sound is detected and pauses during silence.',
-        constant: 'Scrolls continuously at the speed you choose.'
+        voice: 'Идёт за словами, которые вы произносите, и ждёт, пока вы молчите.',
+        sound: 'Прокручивает, пока микрофон слышит звук, и останавливается в тишине. Слова не распознаёт.',
+        constant: 'Прокручивает непрерывно с выбранной скоростью.'
     };
     els.scrollingModeDescription.textContent = descriptions[state.config.scrollingMode];
 
@@ -1248,7 +1281,7 @@ els.scrollingModeSelect.addEventListener('change', (e) => {
 
 els.scrollSpeedInput.addEventListener('input', (e) => {
     state.config.scrollSpeed = parseFloat((e.target as HTMLInputElement).value);
-    els.scrollSpeedVal.textContent = `${state.config.scrollSpeed.toFixed(1)} w/s`;
+    els.scrollSpeedVal.textContent = `${state.config.scrollSpeed.toFixed(1)} сл/с`;
 });
 
 els.soundSensitivityInput.addEventListener('input', (e) => {
@@ -1256,10 +1289,20 @@ els.soundSensitivityInput.addEventListener('input', (e) => {
     els.soundSensitivityVal.textContent = `${Math.round(state.config.soundSensitivity * 100)}%`;
 });
 
+// Guard flag of pinDockToVisualViewport() below. Declared here because boot()
+// can run right away, before the rest of this module has been evaluated.
+let dockPinned = false;
+
 function boot(): void {
     updateScrollingUI();
     initializeUI();
     pinDockToVisualViewport();
+
+    // Settings are kept between visits. A control's own listener has already
+    // updated the state by the time its event reaches the panel.
+    (['input', 'change', 'click'] as const).forEach(type => {
+        els.settingsPanel.addEventListener(type, saveSettings);
+    });
 
     // Fallback for async localStorage injection (e.g. WKWebView)
     setTimeout(() => {
@@ -1295,7 +1338,6 @@ window.addEventListener('pageshow', () => {
 // Idempotent: called from both module-eval and DOMContentLoaded so the dock is
 // pinned regardless of which fires first (with async module loading either can
 // win). A guard flag ensures listeners/observers are only wired once.
-let dockPinned = false;
 function pinDockToVisualViewport(): void {
     const dock = document.getElementById('mainControlsDock');
     const vv = window.visualViewport;

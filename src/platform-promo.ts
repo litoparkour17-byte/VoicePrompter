@@ -24,60 +24,60 @@ interface NavigatorPlatformData {
 const NATIVE_PROMOS: Record<NativePromoPlatform, NativePromo> = {
     ios: {
         platform: 'ios',
-        title: 'Try native iOS app',
-        href: '/ios/',
+        title: 'Нативное приложение для iOS',
+        href: 'https://voiceprompter.app/ios/',
         analyticsEvent: 'settings-banner-ios',
         pairs: [
             {
-                line1: 'Next-gen voice scrolling',
-                line2: 'Handles ',
-                rotating: ['pauses', 'ad-libs', 'skipped lines', 'changes of pace']
+                line1: 'Прокрутка по голосу нового поколения',
+                line2: 'Понимает ',
+                rotating: ['паузы', 'отсебятину', 'пропуск строк', 'смену темпа']
             },
             {
-                line1: 'Float over apps or record in 4K',
-                line2: 'Perfect for ',
-                rotating: ['Reels', 'TikTok', 'YouTube Shorts', 'live streams']
+                line1: 'Поверх других приложений или запись в 4K',
+                line2: 'Подходит для ',
+                rotating: ['Reels', 'TikTok', 'YouTube Shorts', 'стримов']
             }
         ]
     },
     android: {
         platform: 'android',
-        title: 'Try native Android app',
-        href: '/android/',
+        title: 'Нативное приложение для Android',
+        href: 'https://voiceprompter.app/android/',
         analyticsEvent: 'settings-banner-android',
         pairs: [
             {
-                line1: 'Next-gen voice scrolling',
-                line2: 'Handles ',
-                rotating: ['pauses', 'ad-libs', 'skipped lines', 'changes of pace']
+                line1: 'Прокрутка по голосу нового поколения',
+                line2: 'Понимает ',
+                rotating: ['паузы', 'отсебятину', 'пропуск строк', 'смену темпа']
             },
             {
-                line1: 'Float over apps or record in 4K',
-                line2: 'Perfect for ',
-                rotating: ['Reels', 'TikTok', 'YouTube Shorts', 'live streams']
+                line1: 'Поверх других приложений или запись в 4K',
+                line2: 'Подходит для ',
+                rotating: ['Reels', 'TikTok', 'YouTube Shorts', 'стримов']
             }
         ]
     },
     mac: {
         platform: 'mac',
-        title: 'Try native macOS app',
-        href: '/mac/',
+        title: 'Нативное приложение для macOS',
+        href: 'https://voiceprompter.app/mac/',
         analyticsEvent: 'settings-banner-mac',
         pairs: [
             {
-                line1: 'Next-gen voice scrolling',
-                line2: 'Handles ',
-                rotating: ['pauses', 'ad-libs', 'skipped lines', 'changes of pace']
+                line1: 'Прокрутка по голосу нового поколения',
+                line2: 'Понимает ',
+                rotating: ['паузы', 'отсебятину', 'пропуск строк', 'смену темпа']
             },
             {
-                line1: 'Invisible during screen sharing',
-                line2: 'Perfect for ',
-                rotating: ['video calls', 'sales demos', 'interviews', 'presentations']
+                line1: 'Не виден при показе экрана',
+                line2: 'Подходит для ',
+                rotating: ['видеозвонков', 'демо для клиентов', 'собеседований', 'презентаций']
             },
             {
-                line1: 'Invisible on screen recordings',
-                line2: 'Perfect for ',
-                rotating: ['Looms', 'YouTube videos', 'tutorials', 'product demos']
+                line1: 'Не виден на записи экрана',
+                line2: 'Подходит для ',
+                rotating: ['Loom', 'роликов на YouTube', 'обучающих видео', 'демо продукта']
             }
         ]
     }

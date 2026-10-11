@@ -55,13 +55,13 @@ export async function enumerateAndPopulateDevices(
         const defaultMic = devices.find(d => d.kind === 'audioinput' && d.deviceId === 'default' && d.label)
             || devices.find(d => d.kind === 'audioinput' && d.deviceId && d.label);
 
-        const cameraDefaultText = firstCamera ? `Default Camera (${firstCamera.label})` : 'Default Camera';
+        const cameraDefaultText = firstCamera ? `Камера по умолчанию (${firstCamera.label})` : 'Камера по умолчанию';
         
         let micLabel = defaultMic ? defaultMic.label : '';
         if (micLabel.startsWith('Default - ')) {
             micLabel = micLabel.substring(10);
         }
-        const micDefaultText = micLabel ? `Default Microphone (${micLabel})` : 'Default Microphone';
+        const micDefaultText = micLabel ? `Микрофон по умолчанию (${micLabel})` : 'Микрофон по умолчанию';
 
         // Reset dropdown contents with dynamic default labels
         videoSelect.innerHTML = `<option value="">${cameraDefaultText}</option>`;
@@ -71,12 +71,12 @@ export async function enumerateAndPopulateDevices(
             if (device.kind === 'videoinput' && device.deviceId) {
                 const opt = document.createElement('option');
                 opt.value = device.deviceId;
-                opt.textContent = device.label || `Camera (${device.deviceId.substring(0, 5)}...)`;
+                opt.textContent = device.label || `Камера (${device.deviceId.substring(0, 5)}...)`;
                 videoSelect.appendChild(opt);
             } else if (device.kind === 'audioinput' && device.deviceId) {
                 const opt = document.createElement('option');
                 opt.value = device.deviceId;
-                opt.textContent = device.label || `Microphone (${device.deviceId.substring(0, 5)}...)`;
+                opt.textContent = device.label || `Микрофон (${device.deviceId.substring(0, 5)}...)`;
                 audioSelect.appendChild(opt);
             }
         });

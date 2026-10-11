@@ -148,6 +148,19 @@ export function restartScript(): void {
     scrollToCurrent();
 }
 
+// How many words of the current paragraph are already behind the current one
+function wordsReadInParagraph(paragraphEnds: number[]): number {
+    let start = 0;
+    for (const end of paragraphEnds) {
+        if (end < state.currentIndex) start = end + 1;
+    }
+    let read = 0;
+    for (let i = start; i < state.currentIndex; i++) {
+        if (!state.scriptWords[i].skip) read++;
+    }
+    return read;
+}
+
 export function navigateParagraphs(direction: 'back' | 'forward', paragraphCount: number): void {
     if (state.scriptWords.length === 0) return;
 
@@ -178,7 +191,12 @@ export function navigateParagraphs(direction: 'back' | 'forward', paragraphCount
         });
     }
 
-    if (direction === 'back') {
+    if (direction === 'back' && paragraphCount === 1 && wordsReadInParagraph(paragraphEnds) >= 3) {
+        // Like "previous track" in a player: well into a paragraph, "back"
+        // first returns to its beginning; said again, it goes one further.
+        const before = paragraphEnds.filter(end => end < state.currentIndex);
+        state.currentIndex = before.length > 0 ? before[before.length - 1] + 1 : 0;
+    } else if (direction === 'back') {
         // Find how many paragraph boundaries are before currentIndex
         let target = 0;
         let boundariesBefore = 0;
@@ -266,7 +284,7 @@ export function updateMicUI(isListening: boolean): void {
         els.micButton.classList.add('bg-red-600', 'hover:bg-red-700', 'animate-pulse');
         els.micIcon.classList.add('text-white');
         
-        els.statusIndicator.textContent = isVoice ? "Listening..." : "Scrolling...";
+        els.statusIndicator.textContent = isVoice ? "Слушаю…" : "Прокрутка…";
         els.statusIndicator.classList.remove('text-neutral-500');
         els.statusIndicator.classList.add('text-red-500');
         
@@ -283,7 +301,7 @@ export function updateMicUI(isListening: boolean): void {
         els.micButton.classList.remove('bg-red-600', 'hover:bg-red-700', 'animate-pulse');
         els.micIcon.classList.remove('text-white');
         
-        els.statusIndicator.textContent = isVoice ? "Tap mic to start" : "Tap play to start";
+        els.statusIndicator.textContent = isVoice ? "Нажмите на микрофон" : "Нажмите «Пуск»";
         els.statusIndicator.classList.add('text-neutral-500');
         els.statusIndicator.classList.remove('text-red-500');
         
@@ -304,7 +322,7 @@ export function renderHistoryList(history: HistoryItem[], onLoad: (text: string,
     if (history.length === 0) {
         els.historyList.innerHTML = `
             <div class="text-center py-8 border border-dashed border-neutral-800 rounded-lg text-neutral-600 text-sm">
-                No previous scripts found
+                Пока нет сохранённых текстов
             </div>
         `;
         els.clearHistoryBtn.classList.add('hidden');

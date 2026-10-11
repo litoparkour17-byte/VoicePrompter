@@ -1,5 +1,8 @@
 node_modules/
 dist/
+dist-app/
+.app-public/
+.cert/
 .DS_Store
 *.local
 .env

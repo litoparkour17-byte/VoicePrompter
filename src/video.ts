@@ -66,7 +66,7 @@ export async function enterVideoMode(): Promise<void> {
         (window as any).umami?.track('video-mode-enter');
     } catch (err) {
         console.error('Failed to access camera:', err);
-        alert('Could not access your camera. Please allow camera and microphone permissions.');
+        alert('Нет доступа к камере. Разрешите доступ к камере и микрофону.');
     }
 }
 
@@ -100,7 +100,7 @@ export async function flipCamera(): Promise<void> {
         // Device may not have the requested camera — revert.
         console.error('Failed to switch camera:', err);
         state.facingMode = previous;
-        alert('Could not switch camera. This device may only have one camera.');
+        alert('Не удалось сменить камеру. Возможно, на устройстве она одна.');
     }
 }
 
@@ -161,13 +161,13 @@ function applyVideoLayout(): void {
 
     if (state.videoLayoutMode === 'split') {
         els.prompterContainer.classList.add('video-mode-split');
-        els.videoLayoutToggleBtn.textContent = '⬜ Overlay';
-        els.videoLayoutToggleBtn.title = 'Switch to overlay mode';
+        els.videoLayoutToggleBtn.textContent = '⬜ Поверх видео';
+        els.videoLayoutToggleBtn.title = 'Показать текст поверх видео';
         els.scrollContainer.style.backgroundColor = state.config.bgColor;
     } else {
         els.prompterContainer.classList.add('video-mode-overlay');
-        els.videoLayoutToggleBtn.textContent = '⬜ Split';
-        els.videoLayoutToggleBtn.title = 'Switch to split mode';
+        els.videoLayoutToggleBtn.textContent = '⬜ Пополам';
+        els.videoLayoutToggleBtn.title = 'Поделить экран между текстом и видео';
         els.scrollContainer.style.backgroundColor = '';
     }
 }

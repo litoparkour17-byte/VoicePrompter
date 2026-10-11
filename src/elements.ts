@@ -36,6 +36,10 @@ export interface Elements {
     dismissIpadWarningBtn: HTMLElement;
     langDetectionWarning: HTMLElement;
     dismissLangWarningBtn: HTMLElement;
+    speechErrorToast: HTMLElement;
+    speechErrorText: HTMLElement;
+    dismissSpeechErrorBtn: HTMLElement;
+    heardDebug: HTMLElement;
     androidVideoWarning: HTMLElement;
     dismissAndroidVideoWarningBtn: HTMLElement;
     historyList: HTMLElement;
@@ -158,6 +162,10 @@ export function initElements(): void {
         dismissIpadWarningBtn: document.getElementById('dismissIpadWarningBtn')!,
         langDetectionWarning: document.getElementById('langDetectionWarning')!,
         dismissLangWarningBtn: document.getElementById('dismissLangWarningBtn')!,
+        speechErrorToast: document.getElementById('speechErrorToast')!,
+        speechErrorText: document.getElementById('speechErrorText')!,
+        dismissSpeechErrorBtn: document.getElementById('dismissSpeechErrorBtn')!,
+        heardDebug: document.getElementById('heardDebug')!,
         androidVideoWarning: document.getElementById('androidVideoWarning')!,
         dismissAndroidVideoWarningBtn: document.getElementById('dismissAndroidVideoWarningBtn')!,
         historyList: document.getElementById('historyList')!,
