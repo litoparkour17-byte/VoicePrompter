@@ -13,7 +13,6 @@ import { enterVideoMode, exitVideoMode, toggleVideoLayout, startRecording, stopR
 import { detectAll } from 'tinyld/light';
 import { fetchGoogleDocText } from './gdoc';
 import { enumerateAndPopulateDevices } from './devices';
-import { detectVisitorPlatform, getNativePromo } from './platform-promo';
 
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
@@ -617,107 +616,18 @@ els.resetAppBtn.addEventListener('click', resetApp);
 // Restart Script Button
 els.restartScriptBtn.addEventListener('click', restartScript);
 
-const visitorPlatform = detectVisitorPlatform();
-const nativePromo = getNativePromo(visitorPlatform);
-els.nativePromoTitle.textContent = nativePromo.title;
-
-let promoTimeout: number | null = null;
-let currentPromoPairIndex = 0;
-let currentPromoPairStatic = '';
-let currentPromoWord = '';
-
-function startPromoAnimation() {
-    if (promoTimeout) {
-        window.clearTimeout(promoTimeout);
-        promoTimeout = null;
-    }
-
-    const subtitleEl = els.nativePromoSubtitle;
-
-    const pair = nativePromo.pairs[currentPromoPairIndex];
-    currentPromoPairIndex = (currentPromoPairIndex + 1) % nativePromo.pairs.length;
-    
-    currentPromoPairStatic = pair.line1;
-
-    if (pair.rotating.length === 0) {
-        currentPromoWord = '';
-        subtitleEl.innerHTML = `<div>${pair.line1}</div><div>${pair.line2}</div>`;
-        return;
-    }
-
-    let currentIndex = 0;
-    currentPromoWord = pair.rotating[currentIndex];
-
-    subtitleEl.innerHTML = `<div>${pair.line1}</div><div class="flex items-center">${pair.line2}<span class="promo-rotating-word inline-block transition-all duration-500 opacity-100 translate-y-0 text-[#FFBB00] font-medium whitespace-nowrap ml-1">${pair.rotating[currentIndex]}</span></div>`;
-
-    const rotatingEl = subtitleEl.querySelector('.promo-rotating-word') as HTMLElement;
-
-    function animateNextWord() {
-        promoTimeout = window.setTimeout(() => {
-            if (!document.body.contains(rotatingEl)) return;
-
-            rotatingEl.classList.remove('opacity-100', 'translate-y-0');
-            rotatingEl.classList.add('opacity-0', '-translate-y-2');
-
-            promoTimeout = window.setTimeout(() => {
-                if (!document.body.contains(rotatingEl)) return;
-                currentIndex = (currentIndex + 1) % pair.rotating.length;
-                currentPromoWord = pair.rotating[currentIndex];
-                rotatingEl.textContent = pair.rotating[currentIndex];
-
-                rotatingEl.classList.remove('-translate-y-2', 'transition-all', 'duration-500');
-                rotatingEl.classList.add('translate-y-2');
-
-                void rotatingEl.offsetWidth;
-
-                rotatingEl.classList.add('transition-all', 'duration-500');
-                rotatingEl.classList.remove('opacity-0', 'translate-y-2');
-                rotatingEl.classList.add('opacity-100', 'translate-y-0');
-
-                animateNextWord();
-            }, 500);
-        }, 1500);
-    }
-
-    animateNextWord();
-}
-
-function stopPromoAnimation() {
-    if (promoTimeout) {
-        window.clearTimeout(promoTimeout);
-        promoTimeout = null;
-    }
-}
-
 // Toggle Settings
 els.toggleSettingsBtn.addEventListener('click', () => {
     (window as any).umami?.track('settings-toggle');
     const isHidden = els.settingsPanel.classList.toggle('hidden');
-    if (!isHidden) {
-        startPromoAnimation();
-        if (!isIOS) {
-            enumerateAndPopulateDevices(false);
-        }
-    } else {
-        stopPromoAnimation();
+    if (!isHidden && !isIOS) {
+        enumerateAndPopulateDevices(false);
     }
 });
 
 // Close Settings
 els.closeSettingsBtn.addEventListener('click', () => {
     els.settingsPanel.classList.add('hidden');
-    stopPromoAnimation();
-});
-
-// Native App Promo Card Banner
-els.settingsNativeAppBanner.addEventListener('click', () => {
-    const promoData = currentPromoWord ? `${currentPromoPairStatic} - ${currentPromoWord}` : currentPromoPairStatic;
-    (window as any).umami?.track(nativePromo.analyticsEvent, {
-        destination: nativePromo.href,
-        sourcePlatform: visitorPlatform,
-        variant: promoData
-    });
-    window.location.href = nativePromo.href;
 });
 
 // Font Size Slider

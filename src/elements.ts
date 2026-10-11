@@ -70,10 +70,6 @@ export interface Elements {
     // Language Selection
     languageSelectContainer: HTMLElement;
     languageSelectSettingsContainer: HTMLElement;
-    // Native App Promo Card
-    settingsNativeAppBanner: HTMLElement;
-    nativePromoTitle: HTMLElement;
-    nativePromoSubtitle: HTMLElement;
     // Toggles
     preserveFormattingToggle: HTMLInputElement;
     voiceCommandToggle: HTMLInputElement;
@@ -196,10 +192,6 @@ export function initElements(): void {
         // Language Selection
         languageSelectContainer: document.getElementById('languageSelectContainer')!,
         languageSelectSettingsContainer: document.getElementById('languageSelectSettingsContainer')!,
-        // Native App Promo Card
-        settingsNativeAppBanner: document.getElementById('settings-native-app-banner')!,
-        nativePromoTitle: document.getElementById('nativePromoTitle')!,
-        nativePromoSubtitle: document.getElementById('nativePromoSubtitle')!,
         // Toggles
         preserveFormattingToggle: document.getElementById('preserveFormattingToggle') as HTMLInputElement,
         voiceCommandToggle: document.getElementById('voiceCommandToggle') as HTMLInputElement,

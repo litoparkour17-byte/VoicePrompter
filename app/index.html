@@ -217,16 +217,6 @@
     <!-- Setup Screen -->
     <div id="setupScreen" class="flex flex-col max-w-4xl mx-auto p-4 md:p-8 landscape:p-2">
         <header class="mb-8 landscape:mb-3 text-center relative">
-            <a href="https://voiceprompter.app/"
-                class="inline-flex items-center gap-1.5 text-xs text-neutral-500 hover:text-neutral-300 transition-colors mb-4 landscape:mb-2"
-                style="font-family: 'DM Sans', sans-serif;">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 17l-5-5m0 0l5-5m-5 5h12" />
-                </svg>
-                                на основе voiceprompter.app
-            </a>
             <h1 class="text-3xl landscape:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#FFBB00] to-[#FFD54F] mb-2 landscape:mb-1"
                 style="font-family: 'DM Sans', sans-serif;">
                 Суфлёр</h1>
@@ -502,38 +492,6 @@
             <div class="mb-4 pb-4 border-b border-neutral-800 dropdown-container">
                 <label class="block text-xs text-neutral-400 mb-2">Язык распознавания речи</label>
                 <div id="languageSelectSettingsContainer" class="relative"></div>
-            </div>
-
-            <!-- Native App Promo Card -->
-            <div class="mb-4 pb-4 border-b border-neutral-800">
-                <button id="settings-native-app-banner"
-                    class="w-full text-left relative overflow-hidden rounded-lg p-[1px] group transition-all">
-                    <!-- Spinning border gradient -->
-                    <div class="absolute inset-[-200%] animate-[spin_12s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#FFBB00_0%,#FFBB00_40%,transparent_70%,#FFBB00_100%)] opacity-60 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    
-                    <!-- Inner content -->
-                    <div class="relative w-full h-full bg-neutral-800 group-hover:bg-neutral-700 rounded-[7px] p-3 transition-colors flex items-center justify-between">
-                        <div>
-                            <div
-                                class="text-sm font-bold text-white group-hover:text-[#FFBB00] transition-colors flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                                <span id="nativePromoTitle">Нативное приложение</span>
-                            </div>
-                            <div id="nativePromoSubtitle"
-                                class="text-xs text-neutral-400 mt-1 flex flex-col justify-center min-h-[32px]">
-                            </div>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg"
-                            class="h-4 w-4 text-neutral-500 group-hover:text-white transition-colors" fill="none"
-                            viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </div>
-                </button>
             </div>
 
             <!-- Scrolling Mode -->
